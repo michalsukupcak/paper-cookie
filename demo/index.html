@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <title>paper-cookie demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../paper-cookie.html">
+    <style is="custom-style" include="demo-pages-shared-styles">
+      paper-button { background: white; }
+      div.center { text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="vertical-section-container centered">
+
+      <div>
+        <h2>Instructions</h2>
+        Please note that due to "absolute" positioning, elements are not in the demo box, but at their appropriate
+        locations.<br>
+        <br>
+        Also, after you click any of the "Accept" buttons, all consent boxes will disappear. Please click the button
+        below to reset localStorage settings and reload page to see the consent boxes again.<br>
+        <br>
+        <div class="center">
+          <paper-button id="reset" raised>Reset localStorage</paper-button>
+        </div>
+      </div>
+
+      <br>
+
+      <h3>Basic Demo (bottom right corner)</h3>
+      <demo-snippet>
+        <template>
+          <paper-cookie title="Cookies!" policy-link="http://example.com" policy-text="Cookie Policy" accept-text="Accept">
+            <p><i>Basic Demo</i></p>
+            We use cookies to ensure that we give you the best experience on our website. By continuing to use this
+            website you are giving consent to cookies being used.
+          </paper-cookie>
+        </template>
+      </demo-snippet>
+
+      <h3>No Cookie Policy Demo (bottom left corner)</h3>
+      <demo-snippet>
+        <template>
+          <paper-cookie title="Cookies!" accept-text="Accept" horizontal-align="left">
+            <p><i>No Cookie Policy Demo</i></p>
+            We use cookies to ensure that we give you the best experience on our website. By continuing to use this
+            website you are giving consent to cookies being used.
+          </paper-cookie>
+        </template>
+      </demo-snippet>
+
+      <h3>Custom Style Demo (top right corner)</h3>
+      <demo-snippet>
+        <template>
+          <style is="custom-style">
+            #styleDemo {
+              --paper-cookie-background-color: #323232;
+              --paper-cookie-text-color: #F1F1F1;
+              --paper-cookie-width: 512px;
+              --paper-cookie-header-font-color: #FFA000;
+              --paper-cookie-header-font-size: 2.2em;
+              --paper-cookie-content-font-color: #F1F1F1;
+              --paper-cookie-accept-button-color: #FFA000;
+              --paper-cookie-policy-button-color: #FFC107;
+            }
+          </style>
+
+          <paper-cookie id="styleDemo" title="Cookies!" policy-link="http://example.com" policy-text="Cookie Policy" accept-text="Accept" horizontal-align="right" vertical-align="top">
+            <p><i>Custom Style Demo</i></p>
+            We use cookies to ensure that we give you the best experience on our website. By continuing to use this
+            website you are giving consent to cookies being used.
+          </paper-cookie>
+        </template>
+      </demo-snippet>
+
+    </div>
+    <script type="text/javascript">
+      var reset = document.getElementById('reset');
+      reset.addEventListener('click', function () {
+        window.localStorage.clear();
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

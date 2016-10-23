@@ -1,0 +1,291 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-mediaquery/iron-mediaquery.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<!--
+### Description
+
+`paper-cookie` provides that annoying EU Cookie Consent Law functionality for your website/app. Element works
+out-of-the-box with no configuration for effortless implementation or allows for extensive visual and functional
+customization that allows you to customize default user experience and fit the element to both light and dark designs.
+
+`Simple example:`
+
+    <paper-cookie title="Cookies!" accept-text="Accept" policy-text="Cookie Policy" policy-link="http://example.com">
+      We use cookies to ensure that we give you the best experience on our website. By continuing to use this website
+      you are giving consent to cookies being used.
+    </paper-cookie>
+
+Uses browser localStorage API (variable: `__paperCookie-cookieConsentAccepted`) to record user's consent action.
+
+### Styling
+The following custom properties and mixins are available for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--paper-cookie-background-color` | Consent box background color | `white`
+`--paper-cookie-text-color` | Main text color for all sections | `black`
+`--paper-cookie-width` | Consent box width (px, % or 'auto') | `312px`
+`--paper-cookie-header-font-color` | Header text color | `black`
+`--paper-cookie-header-font-size` | Header text size | `2em`
+`--paper-cookie-content-font-color` | Content text color | `black`
+`--paper-cookie-accept-button-color` | Accept button color | `#E91E63`
+`--paper-cookie-policy-button-color` | Policy button color | `black`
+
+@demo demo/index.html 
+-->
+
+<dom-module id="paper-cookie">
+  <template>
+
+    <style>
+
+      /* <paper-cookie> element */
+      :host {
+        background: var(--paper-cookie-background-color, white);
+        color: var(--paper-cookie-text-color, black);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        box-sizing: border-box;
+        display: block;
+        padding: 16px;
+        position: fixed;
+        width: var(--paper-cookie-width, 312px);
+      }
+
+      /* <paper-cookie> element after hide animation */
+      :host.hidden {
+        animation-duration: .5s;
+        animation-fill-mode: forwards;
+        animation-name: animation-hide;
+        animation-timing-function: linear;
+      }
+
+      /* Hide animation */
+      @keyframes animation-hide {
+        0% { transform: translateY(0%); }
+        25% { transform: translateY(20%); }
+        50% { transform: translateY(60%); }
+        75% { transform: translateY(90%); }
+        100% { transform: translateY(120%); }
+      }
+
+      /* Title */
+      header {
+        color: var(--paper-cookie-header-font-color, black);
+        font-size: var(--paper-cookie-header-font-size, 2em);
+        margin: 0;
+        padding: 8px 14px 0 14px;
+      }
+
+      /* Cookie consent text */
+      main {
+        color: var(--paper-cookie-content-font-color, black);
+        margin: 16px 0 12px 0;
+        padding: 0 14px;
+      }
+
+      /* Footer buttons */
+      footer {
+        display: flex;
+        margin: 0 0 0 0;
+      }
+
+      /* Accept button */
+      footer paper-button.accept {
+        color: var(--paper-cookie-accept-button-color, #E91E63);
+      }
+
+      /* Horizontal space flexer between buttons */
+      footer span {
+        flex-grow: 12;
+      }
+
+      /* Policy button */
+      footer paper-button.policy {
+        color: var(--paper-cookie-policy-button-color, black);
+      }
+
+    </style>
+
+    <!-- Title -->
+    <template is="dom-if" if="[[_showTitle(title)]]">
+      <header>[[title]]</header>
+    </template>
+
+    <!-- Cookie consent text -->
+    <main>
+      <content></content>
+    </main>
+
+    <!-- Buttons -->
+    <footer>
+
+      <!-- Accept button -->
+      <paper-button class="accept" on-tap="_acceptPolicy">[[acceptText]]</paper-button>
+
+      <!-- Policy button and space flexer (display only when policyLink and policyText attributes are filled) -->
+      <template is="dom-if" if="[[_showPolicy(policyText)]]">
+
+        <!-- Space flexer -->
+        <span></span>
+
+        <!-- Policy button -->
+        <paper-button class="policy" on-tap="_openPolicy">[[policyText]]</paper-button>
+
+      </template>
+
+    </footer>
+
+  </template>
+  <script>
+    Polymer({
+
+      is: 'paper-cookie',
+      behaviors: [],
+      properties: {
+
+        /**
+         * Text displayed inside the "Accept" button.
+         */
+        acceptText: {
+          type: String,
+          value: 'Accept'
+        },
+
+        /**
+         * Horizontal align for the consent box.
+         *
+         * Allowed values: `left`, `right`, `center`.
+         */
+        horizontalAlign: {
+          type: String,
+          value: 'right'
+        },
+
+        /**
+         * Optional. URL address that will be opened when user clicks on the "Policy" button using window.open()
+         * function. Ignore (or set as empty string) if you don't want this behavior and would rather handle the
+         * `paper-cookie-policy-open` yourself.
+         */
+        policyLink: {
+          type: String,
+          value: ''
+        },
+
+        /**
+         * Optional. Text displayed inside the "Policy" button. Ignor (or set as empty string) if you don't want the
+         * "Policy" button to show up at all.
+         */
+        policyText: {
+          type: String,
+          value: ''
+        },
+
+        /**
+         * Consent box title. Ignore or leave empty for no title.
+         */
+        title: {
+          type: String,
+          value: ''
+        },
+
+        /**
+         * Vertical align for the consent box.
+         *
+         * Allowed values: `top`, `bottom`.
+         */
+        verticalAlign: {
+          type: String,
+          value: 'bottom'
+        }
+
+      },
+
+      attached: function () {
+        this._init();
+      },
+
+      /**
+       * Initializes element.
+       *
+       * If consent is already accepted, consent box is hidden and nothing else is done.
+       *
+       * If consent is not accepted, sets consent box location based on `horizontalAlign` and `verticalAlign`
+       * properties.
+       */
+      _init: function () {
+        if (window.localStorage.getItem('__paperCookie-cookieConsentAccepted')) {
+          this.style.display = 'none';
+        } else {
+          // Set horizontal align
+          if (this.horizontalAlign === 'right') {
+            this.style.right = '16px';
+          } else if (this.horizontalAlign === 'left') {
+            this.style.left = '16px';
+          } else if (this.horizontalAlign === 'center') {
+            this.style.left = '50%';
+            this.style.marginLeft = '-' + (this.clientWidth / 2) + 'px';
+          } else {
+            console.error('paper-cookie: Invalid \'horizontalAlign\' attribute value: "' + this.horizontalAlign + '"!');
+          }
+          // Set vertical align
+          if (this.verticalAlign === 'bottom') {
+            this.style.bottom = '16px';
+          } else if (this.verticalAlign === 'top') {
+            this.style.top = '16px';
+          } else {
+            console.error('paper-cookie: Invalid \'verticalAlign\' attribute value: "' + this.verticalAlign + '"!');
+          }
+        }
+      },
+
+      /**
+       * Triggers the `animation-hide` CSS animation by adding `.hidden` class to the consent box, sets localStorage
+       * value to true and fires `paper-cookie-policy-accept` event.
+       */
+      _acceptPolicy: function () {
+        this.className += ' hidden';
+        window.localStorage.setItem('__paperCookie-cookieConsentAccepted', true);
+        this.fire('paper-cookie-policy-accept');
+      },
+
+      /**
+       * Opens policy page (if `policyLink` attribute is supplied) and fires `paper-cookie-policy-open` event.
+       */
+      _openPolicy: function () {
+        this.fire('paper-cookie-policy-open');
+        if (this.policyLink.length > 0) {
+          window.open(this.policyLink);
+        }
+      },
+
+      /**
+       * Determines if "Policy" button should be visible (`policyText` attribute is not an empty string).
+       */
+      _showPolicy: function (policyText) {
+        return (policyText.length > 0);
+      },
+
+      /**
+       * Determines of "Title" should be visible (`title` attribute is not an empty string).
+       */
+      _showTitle: function (title) {
+        return (title.length > 0);
+      }
+
+
+      /**
+       * Fired when accept button is clicked/tapped. Event carries no data.
+       *
+       * @event 'paper-cookie-policy-accept'
+       */
+
+      /**
+       * Fired when policy button is clicked/tapped. Event carries no data.
+       *
+       * @event 'paper-cookie-policy-open'
+       */
+
+    });
+  </script>
+</dom-module>
